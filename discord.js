@@ -142,6 +142,44 @@ client.on('messageCreate', msg => {
             });
 
             break;
+
+        default:
+            let searchHourMatch = msg.content.match(/^[Ii]n ([1-9]{0,1}[0-9]) hours/);
+            if (searchHourMatch) {
+                checkTimeRangeRecord(
+                    msg.author.id,
+                    moment().subtract(searchHourMatch[1], 'hours').unix(),
+                    moment().unix(),
+                    searchHourMatch[1] + '小時內',
+                    true
+                ).then(message => {
+                    msg.reply(message);
+                }).catch(error => {
+                    recordError(error, 'checkTimeRangeRecord catch error');
+                });
+
+                break;
+            }
+
+            let thisYearDateMatch = msg.content.match(/^(0?[1-9]|1[012])[\/\-](0?[1-9]|[12][0-9]|3[01])$/);
+            if (thisYearDateMatch) {
+                let month = thisYearDateMatch[1];
+                let day = thisYearDateMatch[2];
+                let specifyDate = moment(moment().year() + '-' + month + '-' + day, 'YYYY-MM-DD');
+
+                checkTimeRangeRecord(
+                    msg.author.id,
+                    specifyDate.startOf('day').unix(),
+                    specifyDate.endOf('day').unix(),
+                month + '月' + day + '號'
+                ).then(message => {
+                    msg.reply(message);
+                }).catch(error => {
+                    recordError(error, 'checkTimeRangeRecord catch error');
+                });
+
+                break;
+            }
     }
 });
 
@@ -246,14 +284,13 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
 
             if (ifCountCurrent === false) {
                 if (totalSecond === 0) {
-                    resolve(rangeName + '還沒有開始讀哦');
+                    resolve(rangeName + '沒有讀書紀錄哦');
                 } else {
                     resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
                 }
             } else if (ifCountCurrent === true) {
                 getCurrentReadingStart(userId).then(currentReading => {
                     if ((currentReading.status === 1) && (currentReading.startTime !== null)) {
-                        console.log('should execute here');
                         let currentTime = moment().unix();
                         if (currentTime > end) {
                             currentTime = end;
@@ -267,7 +304,7 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
                     }
 
                     if (totalSecond === 0) {
-                        resolve(rangeName + '還沒有開始讀哦');
+                        resolve(rangeName + '沒有讀書紀錄哦');
                     } else {
                         resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
                     }
