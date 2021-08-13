@@ -1,10 +1,11 @@
+const env = require('dotenv');
+env.config();
+
 const {sequelize, DataTypes, Op } = require('sequelize');
 const Discord = require('discord.js');
-const { token } = require('./token.json');
 const { Client, Intents } = require('discord.js');
 const moment = require('moment');
 const db = require('./datebase');
-const recordChannelId = '';
 
 const client = new Client({ intents: [
     Intents.FLAGS.GUILDS,
@@ -17,7 +18,7 @@ const client = new Client({ intents: [
 let textChannel;
 
 client.once('ready', () => {
-    textChannel = client.channels.cache.get('');
+    textChannel = client.channels.cache.get(process.env.textChannelId);
 });
 
 const UserStatus = db.define('userStatus', {
@@ -67,20 +68,13 @@ client.on('ready', () => {
         .then(() => {
             console.log('connected to db');
         }).catch(error => {
-            console.log('error');
-            console.log(error);
     })
 });
 
 client.on('messageCreate', msg => {
-    // textChannel.send(`12345`);
-
-client.on('message', msg => {
     if (msg.content === 'ping') {
         msg.reply('pong');
     }
-
-    console.log(msg.author.id);
 
     switch (msg.content) {
         case 'today':
@@ -202,15 +196,13 @@ client.on('message', msg => {
         case '禮拜':
         case 'month':
         case '月':
-        case 'yesterday':
-        case '昨天':
             msg.reply('還沒做好...');
             break;
     }
 });
 
 client.on('voiceStateUpdate', (oldState, newState) => {
-    if (newState.channelId === recordChannelId) {
+    if (newState.channelId === process.env.recordChannelId) {
         UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
@@ -232,7 +224,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                     });
                 }
             });
-    } else if (oldState.channelId === recordChannelId) {
+    } else if (oldState.channelId === process.env.recordChannelId) {
         UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
@@ -258,4 +250,4 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     }
 });
 
-client.login(token);
+client.login(process.env.bot_token);
