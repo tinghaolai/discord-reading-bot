@@ -188,17 +188,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
-                    if (obj.dataValues.start_time === null || obj.dataValues.start_time < moment().startOf('day').unix()) {
-                        textChannel.send(`<@${newState.member.user.id}> 哈囉！今天也一起加油吧！`);
-                    }
-
                     obj.update({
                         status: 1,
                         start_time: moment().unix(),
                     });
                 } else {
-                    textChannel.send(`<@${newState.member.user.id}> 哈囉！今天也一起加油吧！`);
-
                     UserStatus.create({
                         user_id: newState.member.user.id,
                         status: 1,
