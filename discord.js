@@ -79,124 +79,68 @@ client.on('messageCreate', msg => {
     switch (msg.content) {
         case 'today':
         case '今天':
-            ChannelRecord.findAll({ where: {
-                    user_id: msg.author.id,
-                    start_time: {
-                        [Op.between]: [moment().startOf('day').unix(), moment().endOf('day').unix()],
-                    }
-                }}).then((records) => {
-                let totalSecond = 0;
-                if (records.length > 0) {
-                    records.forEach(record => {
-                        totalSecond += record.dataValues.end_time - record.dataValues.start_time;
-                    });
-                }
-
-                UserStatus.findOne({ where: { user_id: msg.author.id }})
-                    .then((obj) => {
-                        if (
-                            (obj) &&
-                            (obj.dataValues.status === 1) &&
-                            (obj.dataValues.start_time !== null)
-                        ) {
-                            totalSecond += moment().unix() - obj.dataValues.start_time;
-                        }
-
-                        if (totalSecond === 0) {
-                            msg.reply('今天還沒有開始讀哦');
-                        } else {
-                            let hours = Math.floor(totalSecond / 3600);
-                            let messages = [];
-                            if (hours) {
-                                totalSecond -= hours * 3600;
-                                messages.push(hours + '小時 ');
-                            }
-
-                            let minutes = Math.floor(totalSecond / 60);
-                            if (minutes) {
-                                totalSecond -= minutes * 60;
-                                messages.push(minutes + '分鐘');
-                            }
-
-                            messages.push(totalSecond + '秒');
-                            msg.reply('今天讀了' + messages.join(','))
-                        }
-                    });
+            checkTimeRangeRecord(
+                msg.author.id,
+                moment().startOf('day').unix(),
+                moment().endOf('day').unix(),
+                '今天',
+                true
+            ).then(message => {
+                msg.reply(message);
+            }).catch(error => {
+                recordError(error, 'checkTimeRangeRecord catch error');
             });
 
             break;
 
         case 'yesterday':
         case '昨天':
-            let start = moment().subtract(1, 'days').startOf('day').unix();
-            let end = moment().subtract(1, 'days').endOf('day').unix();
-
-            ChannelRecord.findAll({ where: {
-                    user_id: msg.author.id,
-                    [Op.or]: [
-                        {
-                            start_time: {
-                                [Op.between]: [
-                                    start,
-                                    end,
-                                ],
-                            },
-                        },
-                        {
-                            end_time: {
-                                [Op.between]: [
-                                    start,
-                                    end,
-                                ],
-                            },
-                        }
-                    ],
-                }}).then((records) => {
-                let totalSecond = 0;
-                if (records.length > 0) {
-                    records.forEach(record => {
-                        if (record.dataValues.end_time > end) {
-                            record.dataValues.end_time = end;
-                        }
-
-                        if (record.dataValues.start_time < start) {
-                            record.dataValues.start_time = start;
-                        }
-
-                        totalSecond += record.dataValues.end_time - record.dataValues.start_time;
-                    });
-                }
-
-                if (totalSecond === 0) {
-                    msg.reply('昨天還沒有開始讀哦');
-                } else {
-                    let hours = Math.floor(totalSecond / 3600);
-                    let messages = [];
-                    if (hours) {
-                        totalSecond -= hours * 3600;
-                        messages.push(hours + '小時 ');
-                    }
-
-                    let minutes = Math.floor(totalSecond / 60);
-                    if (minutes) {
-                        totalSecond -= minutes * 60;
-                        messages.push(minutes + '分鐘');
-                    }
-
-                    messages.push(totalSecond + '秒');
-                    msg.reply('昨天讀了' + messages.join(','))
-                }
+            checkTimeRangeRecord(
+                msg.author.id,
+                moment().subtract(1, 'days').startOf('day').unix(),
+                moment().subtract(1, 'days').endOf('day').unix(),
+                '昨天'
+            ).then(message => {
+                msg.reply(message);
+            }).catch(error => {
+                recordError(error, 'checkTimeRangeRecord catch error');
             });
 
             break;
 
-        case '%hours ago':
-        case '%小時前':
         case 'week':
+        case '這個禮拜':
         case '禮拜':
+        case '星期':
+        case '周':
+            checkTimeRangeRecord(
+                msg.author.id,
+                moment().startOf('week').unix(),
+                moment().endOf('week').unix(),
+                '這禮拜'
+            ).then(message => {
+                msg.reply(message);
+            }).catch(error => {
+                recordError(error, 'checkTimeRangeRecord catch error');
+            });
+
+            break;
+
         case 'month':
         case '月':
-            msg.reply('還沒做好...');
+        case '本月':
+        case '這個月':
+            checkTimeRangeRecord(
+                msg.author.id,
+                moment().startOf('month').unix(),
+                moment().endOf('month').unix(),
+                '這個月'
+            ).then(message => {
+                msg.reply(message);
+            }).catch(error => {
+                recordError(error, 'checkTimeRangeRecord catch error');
+            });
+
             break;
     }
 });
@@ -249,5 +193,117 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             });
     }
 });
+
+function getCurrentReadingStart(userId) {
+    return new Promise((resolve, reject) => {
+        UserStatus.findOne({ where: { user_id: userId }})
+            .then((obj) => {
+                resolve({
+                    status: ((obj) && (obj.dataValues)) ? obj.dataValues.status : 0,
+                    startTime: ((obj) && (obj.dataValues)) ? obj.dataValues.start_time : null,
+                });
+            });
+    });
+}
+
+function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCountCurrent = false) {
+    return new Promise((resolve, reject) => {
+        ChannelRecord.findAll({ where: {
+                user_id: userId,
+                [Op.or]: [
+                    {
+                        start_time: {
+                            [Op.between]: [
+                                start,
+                                end,
+                            ],
+                        },
+                    },
+                    {
+                        end_time: {
+                            [Op.between]: [
+                                start,
+                                end,
+                            ],
+                        },
+                    }
+                ],
+            }}).then((records) => {
+            let totalSecond = 0;
+            if (records.length > 0) {
+                records.forEach(record => {
+                    if (record.dataValues.end_time > end) {
+                        record.dataValues.end_time = end;
+                    }
+
+                    if (record.dataValues.start_time < start) {
+                        record.dataValues.start_time = start;
+                    }
+
+                    totalSecond += record.dataValues.end_time - record.dataValues.start_time;
+                });
+            }
+
+            if (ifCountCurrent === false) {
+                if (totalSecond === 0) {
+                    resolve(rangeName + '還沒有開始讀哦');
+                } else {
+                    resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
+                }
+            } else if (ifCountCurrent === true) {
+                getCurrentReadingStart(userId).then(currentReading => {
+                    if ((currentReading.status === 1) && (currentReading.startTime !== null)) {
+                        console.log('should execute here');
+                        let currentTime = moment().unix();
+                        if (currentTime > end) {
+                            currentTime = end;
+                        }
+
+                        if (currentReading.startTime < start) {
+                            currentReading.startTime = start;
+                        }
+
+                        totalSecond += Math.max(currentTime - currentReading.startTime, 0);
+                    }
+
+                    if (totalSecond === 0) {
+                        resolve(rangeName + '還沒有開始讀哦');
+                    } else {
+                        resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
+                    }
+                }).catch(error => {
+                    recordError(error, 'getCurrentReadingStart catch error');
+                });
+            }
+        });
+    });
+}
+
+function recordError(error, errorType = null) {
+    if (errorType) {
+        console.log(errorType);
+    }
+
+    console.log(error);
+}
+
+function secondsConvertHourInfo(second) {
+    let hours = Math.floor(second / 3600);
+    let messages = [];
+    if (hours) {
+        second -= hours * 3600;
+        messages.push(hours + '小時 ');
+    }
+
+    let minutes = Math.floor(second / 60);
+    if (minutes) {
+        second -= minutes * 60;
+        messages.push(minutes + '分鐘');
+    }
+
+    messages.push(second + '秒');
+
+    return messages.join(',');
+}
 
 client.login(process.env.bot_token);
