@@ -72,6 +72,8 @@ client.on('ready', () => {
     })
 });
 
+client.on('messageCreate', msg => {
+    // textChannel.send(`12345`);
 
 client.on('message', msg => {
     if (msg.content === 'ping') {
@@ -84,11 +86,11 @@ client.on('message', msg => {
         case 'today':
         case '今天':
             ChannelRecord.findAll({ where: {
-                user_id: msg.author.id,
-                start_time: {
-                    [Op.between]: [moment().startOf('day').unix(), moment().endOf('day').unix()],
-                }
-            }}).then((records) => {
+                    user_id: msg.author.id,
+                    start_time: {
+                        [Op.between]: [moment().startOf('day').unix(), moment().endOf('day').unix()],
+                    }
+                }}).then((records) => {
                 let totalSecond = 0;
                 if (records.length > 0) {
                     records.forEach(record => {
@@ -126,9 +128,74 @@ client.on('message', msg => {
                             msg.reply('今天讀了' + messages.join(','))
                         }
                     });
-        });
+            });
 
             break;
+
+        case 'yesterday':
+        case '昨天':
+            let start = moment().subtract(1, 'days').startOf('day').unix();
+            let end = moment().subtract(1, 'days').endOf('day').unix();
+
+            ChannelRecord.findAll({ where: {
+                    user_id: msg.author.id,
+                    [Op.or]: [
+                        {
+                            start_time: {
+                                [Op.between]: [
+                                    start,
+                                    end,
+                                ],
+                            },
+                        },
+                        {
+                            end_time: {
+                                [Op.between]: [
+                                    start,
+                                    end,
+                                ],
+                            },
+                        }
+                    ],
+                }}).then((records) => {
+                let totalSecond = 0;
+                if (records.length > 0) {
+                    records.forEach(record => {
+                        if (record.dataValues.end_time > end) {
+                            record.dataValues.end_time = end;
+                        }
+
+                        if (record.dataValues.start_time < start) {
+                            record.dataValues.start_time = start;
+                        }
+
+                        totalSecond += record.dataValues.end_time - record.dataValues.start_time;
+                    });
+                }
+
+                if (totalSecond === 0) {
+                    msg.reply('昨天還沒有開始讀哦');
+                } else {
+                    let hours = Math.floor(totalSecond / 3600);
+                    let messages = [];
+                    if (hours) {
+                        totalSecond -= hours * 3600;
+                        messages.push(hours + '小時 ');
+                    }
+
+                    let minutes = Math.floor(totalSecond / 60);
+                    if (minutes) {
+                        totalSecond -= minutes * 60;
+                        messages.push(minutes + '分鐘');
+                    }
+
+                    messages.push(totalSecond + '秒');
+                    msg.reply('昨天讀了' + messages.join(','))
+                }
+            });
+
+            break;
+
         case '%hours ago':
         case '%小時前':
         case 'week':
