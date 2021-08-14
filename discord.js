@@ -42,7 +42,6 @@ const UserStatus = db.define('userStatus', {
     tableName: 'user_status'
 });
 
-
 const ChannelRecord = db.define('channelRecord', {
     id: {
         type: DataTypes.BIGINT,
@@ -189,6 +188,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
+                    if (obj.status !== constants.userStatus.status.notReading.value) {
+                        textChannel.send('voiceStateUpdate newState　error, user_id: ' +　
+                            newState.member.user.id + ', status: ' + obj.status + ', start_time: ' + obj.start_time);
+                    }
+
                     obj.update({
                         status: constants.userStatus.status.reading.value,
                         start_time: moment().unix(),
@@ -211,12 +215,18 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                             start_time: obj.dataValues.start_time,
                             end_time: moment().unix(),
                         });
+                    } else {
+                        textChannel.send('leave channel error, user_id: ' +
+                            newState.member.user.id + ', status: ' + obj.status + ', start_time: ' + obj.start_time);
                     }
 
                     obj.update({
                         status: constants.userStatus.status.notReading.value,
                     });
                 } else {
+                    textChannel.send('leave channel but user status node found, user_id: ' +
+                        newState.member.user.id + ', status: ' + obj.status + ', start_time: ' + obj.start_time);
+
                     UserStatus.create({
                         user_id: newState.member.user.id,
                         status: constants.userStatus.status.notReading.value,
@@ -317,9 +327,11 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
 function recordError(error, errorType = null) {
     if (errorType) {
         console.log(errorType);
+        textChannel.send(errorType);
     }
 
     console.log(error);
+    textChannel.send(error);
 }
 
 function secondsConvertHourInfo(second) {
