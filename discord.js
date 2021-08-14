@@ -144,6 +144,52 @@ client.on('messageCreate', msg => {
 
             break;
 
+        case 'week record':
+        case '周紀錄':
+        case '本周紀錄':
+            displayTimeRangeRecords(
+                msg.author.id,
+                moment().startOf('week').unix(),
+                moment().endOf('week').unix(),
+                '這禮拜'
+            ).then(message => {
+                msg.reply(message);
+            }).catch(error => {
+                recordError(error, 'displayTimeRangeRecords catch error');
+            });
+
+
+            break;
+
+        case 'now':
+        case '現在':
+            getCurrentReadingStart(msg.author.id).then(obj => {
+                switch (obj.status) {
+                    case constants.userStatus.status.notReading.value:
+                        let message = '現在沒有在讀!';
+                        if (obj.startTime) {
+                            message += '\n上次開始時間: ' + moment.unix(obj.startTime).format("YYYY/MM/DD HH:mm:ss");
+                        }
+
+                        msg.reply(message);
+
+                        break;
+
+                    case constants.userStatus.status.reading.value:
+                        msg.reply('開始時間: ' + moment.unix(obj.startTime).format("YYYY/MM/DD HH:mm:ss") +
+                            '\n已經讀了: ' + secondsConvertHourInfo(moment().unix() - obj.startTime));
+
+                        break;
+
+                    default:
+                        msg.reply('unknown status');
+                }
+            }).catch(error => {
+                recordError(error, 'getCurrentReadingStart catch error 123');
+            });
+
+            break;
+
         default:
             let searchHourMatch = msg.content.match(/^[Ii]n ([1-9]{0,1}[0-9]) hours/);
             if (searchHourMatch) {
@@ -321,6 +367,46 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
                     recordError(error, 'getCurrentReadingStart catch error');
                 });
             }
+        });
+    });
+}
+
+
+function displayTimeRangeRecords(userId, start, end, rangeName = '這時段') {
+    return new Promise((resolve, reject) => {
+        ChannelRecord.findAll({ where: {
+                user_id: userId,
+                [Op.or]: [
+                    {
+                        start_time: {
+                            [Op.between]: [
+                                start,
+                                end,
+                            ],
+                        },
+                    },
+                    {
+                        end_time: {
+                            [Op.between]: [
+                                start,
+                                end,
+                            ],
+                        },
+                    }
+                ],
+            }}).then((records) => {
+                if (records.length === 0) {
+                    resolve(rangeName + '沒有任何紀錄！');
+                }
+
+                let messages = [];
+                records.forEach(record => {
+                    messages.push(moment.unix(record.dataValues.start_time).format("YYYY/MM/DD HH:mm:ss") + ' ~ ' +
+                        moment.unix(record.dataValues.end_time).format("YYYY/MM/DD HH:mm:ss") + ' / ' +
+                        secondsConvertHourInfo(record.dataValues.end_time - record.dataValues.start_time));
+                });
+
+                resolve(messages.join('\n'));
         });
     });
 }
