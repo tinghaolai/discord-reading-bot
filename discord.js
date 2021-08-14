@@ -110,6 +110,7 @@ client.on('messageCreate', msg => {
 
         case 'week':
         case '這個禮拜':
+        case '這禮拜':
         case '禮拜':
         case '星期':
         case '周':
