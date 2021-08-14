@@ -1,6 +1,7 @@
 const env = require('dotenv');
 env.config();
 
+const constants = require('./constants');
 const {sequelize, DataTypes, Op } = require('sequelize');
 const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
@@ -8,12 +9,12 @@ const moment = require('moment');
 const db = require('./datebase');
 
 const client = new Client({ intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MEMBERS,
-    Intents.FLAGS.GUILD_VOICE_STATES,
-    Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
-] });
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_VOICE_STATES,
+        Intents.FLAGS.DIRECT_MESSAGE_REACTIONS
+    ] });
 
 let textChannel;
 
@@ -171,7 +172,7 @@ client.on('messageCreate', msg => {
                     msg.author.id,
                     specifyDate.startOf('day').unix(),
                     specifyDate.endOf('day').unix(),
-                month + '月' + day + '號'
+                    month + '月' + day + '號'
                 ).then(message => {
                     msg.reply(message);
                 }).catch(error => {
@@ -189,13 +190,13 @@ client.on('voiceStateUpdate', (oldState, newState) => {
             .then((obj) => {
                 if (obj) {
                     obj.update({
-                        status: 1,
+                        status: constants.userStatus.status.reading.value,
                         start_time: moment().unix(),
                     });
                 } else {
                     UserStatus.create({
                         user_id: newState.member.user.id,
-                        status: 1,
+                        status: constants.userStatus.status.reading.value,
                         start_time: moment().unix(),
                     });
                 }
@@ -204,7 +205,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
-                    if ((obj.dataValues.status === 1) && (obj.dataValues.start_time !== null)) {
+                    if ((obj.dataValues.status === constants.userStatus.status.reading.value) && (obj.dataValues.start_time !== null)) {
                         ChannelRecord.create({
                             user_id: newState.member.user.id,
                             start_time: obj.dataValues.start_time,
@@ -213,12 +214,12 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                     }
 
                     obj.update({
-                        status: 0,
+                        status: constants.userStatus.status.notReading.value,
                     });
                 } else {
                     UserStatus.create({
                         user_id: newState.member.user.id,
-                        status: 0,
+                        status: constants.userStatus.status.notReading.value,
                         start_time: null,
                     });
                 }
@@ -231,7 +232,7 @@ function getCurrentReadingStart(userId) {
         UserStatus.findOne({ where: { user_id: userId }})
             .then((obj) => {
                 resolve({
-                    status: ((obj) && (obj.dataValues)) ? obj.dataValues.status : 0,
+                    status: ((obj) && (obj.dataValues)) ? obj.dataValues.status : constants.userStatus.status.notReading.value,
                     startTime: ((obj) && (obj.dataValues)) ? obj.dataValues.start_time : null,
                 });
             });
@@ -284,7 +285,10 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
                 }
             } else if (ifCountCurrent === true) {
                 getCurrentReadingStart(userId).then(currentReading => {
-                    if ((currentReading.status === 1) && (currentReading.startTime !== null)) {
+                    if (
+                        (currentReading.status === constants.userStatus.status.reading.value) &&
+                        (currentReading.startTime !== null)
+                    ) {
                         let currentTime = moment().unix();
                         if (currentTime > end) {
                             currentTime = end;
