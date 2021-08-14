@@ -235,15 +235,12 @@ client.on('voiceStateUpdate', (oldState, newState) => {
         UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
-                    if (obj.status !== constants.userStatus.status.notReading.value) {
-                        textChannel.send('voiceStateUpdate newState　error, user_id: ' +　
-                            newState.member.user.id + ', status: ' + obj.status + ', start_time: ' + obj.start_time);
+                    if (obj.status === constants.userStatus.status.notReading.value) {
+                        obj.update({
+                            status: constants.userStatus.status.reading.value,
+                            start_time: moment().unix(),
+                        });
                     }
-
-                    obj.update({
-                        status: constants.userStatus.status.reading.value,
-                        start_time: moment().unix(),
-                    });
                 } else {
                     UserStatus.create({
                         user_id: newState.member.user.id,
