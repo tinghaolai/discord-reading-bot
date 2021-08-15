@@ -1,7 +1,35 @@
-const { Sequelize } = require('sequelize');
-
-module.exports = new Sequelize(process.env.db_database, process.env.db_user, process.env.db_user_password, {
-    dialect: process.env.db_dialect,
-    host: process.env.db_host,
-    port: process.env.db_port,
-});
+module.exports = {
+    development: {
+        username: process.env.db_user,
+        password: process.env.db_user_password,
+        database: process.env.db_database,
+        host: process.env.db_host,
+        dialect: process.env.db_dialect,
+        port: process.env.db_port,
+        logging: false,
+    },
+    test: {
+        username: process.env.db_user,
+        password: process.env.db_user_password,
+        database: process.env.db_database,
+        host: process.env.db_host,
+        dialect: process.env.db_dialect,
+        port: process.env.db_port,
+        logging: false,
+    },
+    production: {
+        username: process.env.db_user,
+        password: process.env.db_user_password,
+        database: process.env.db_database,
+        host: process.env.db_host,
+        dialect: process.env.db_dialect,
+        port: process.env.db_port,
+        logging: false,
+        pool: {
+            max: 5,
+            min: 0,
+            acquire: 30000,
+            idle: 10000,
+        },
+    },
+};
