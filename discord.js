@@ -204,7 +204,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                         });
                     }
                 } else {
-                    UserStatus.create({
+                    db.UserStatus.create({
                         user_id: newState.member.user.id,
                         status: constants.userStatus.status.reading.value,
                         start_time: moment().unix(),
@@ -230,8 +230,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                         status: constants.userStatus.status.notReading.value,
                     });
                 } else {
-                    textChannel.send('leave channel but user status node found, user_id: ' +
-                        newState.member.user.id + ', status: ' + obj.status + ', start_time: ' + obj.start_time);
+                    textChannel.send('leave channel but user status node found, user_id: ' + newState.member.user.id);
 
                     db.UserStatus.create({
                         user_id: newState.member.user.id,
