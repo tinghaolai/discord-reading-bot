@@ -6,7 +6,7 @@ const {sequelize, DataTypes, Op } = require('sequelize');
 const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
 const moment = require('moment');
-const db = require('./database');
+const db = require('./models/index');
 
 const client = new Client({ intents: [
         Intents.FLAGS.GUILDS,
@@ -22,49 +22,11 @@ client.once('ready', () => {
     textChannel = client.channels.cache.get(process.env.textChannelId);
 });
 
-const UserStatus = db.define('userStatus', {
-    id: {
-        type: DataTypes.INTEGER,
-        autoIncrement: true,
-        primaryKey: true,
-        notNull: true,
-    },
-    user_id: {
-        type: DataTypes.BIGINT,
-    },
-    status: {
-        type: DataTypes.INTEGER
-    },
-    start_time: {
-        type: DataTypes.INTEGER,
-    }
-}, {
-    tableName: 'user_status'
-});
 
-const ChannelRecord = db.define('channelRecord', {
-    id: {
-        type: DataTypes.BIGINT,
-        autoIncrement: true,
-        primaryKey: true,
-        notNull: true,
-    },
-    user_id: {
-        type: DataTypes.BIGINT,
-    },
-    start_time: {
-        type: DataTypes.BIGINT,
-    },
-    end_time: {
-        type: DataTypes.BIGINT,
-    },
-}, {
-    tableName: 'channel_record'
-});
 
 client.on('ready', () => {
     console.log(`Logged in as ${client.user.tag}!`);
-    db.authenticate()
+    db.sequelize.authenticate()
         .then(() => {
             console.log('connected to db');
         }).catch(error => {
@@ -232,7 +194,7 @@ client.on('messageCreate', msg => {
 
 client.on('voiceStateUpdate', (oldState, newState) => {
     if (newState.channelId === process.env.recordChannelId) {
-        UserStatus.findOne({ where: { user_id: newState.member.user.id }})
+        db.UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
                     if (obj.status === constants.userStatus.status.notReading.value) {
@@ -250,11 +212,11 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                 }
             });
     } else if (oldState.channelId === process.env.recordChannelId) {
-        UserStatus.findOne({ where: { user_id: newState.member.user.id }})
+        db.UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
                 if (obj) {
                     if ((obj.dataValues.status === constants.userStatus.status.reading.value) && (obj.dataValues.start_time !== null)) {
-                        ChannelRecord.create({
+                        db.ChannelRecord.create({
                             user_id: newState.member.user.id,
                             start_time: obj.dataValues.start_time,
                             end_time: moment().unix(),
@@ -271,7 +233,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                     textChannel.send('leave channel but user status node found, user_id: ' +
                         newState.member.user.id + ', status: ' + obj.status + ', start_time: ' + obj.start_time);
 
-                    UserStatus.create({
+                    db.UserStatus.create({
                         user_id: newState.member.user.id,
                         status: constants.userStatus.status.notReading.value,
                         start_time: null,
@@ -283,7 +245,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
 
 function getCurrentReadingStart(userId) {
     return new Promise((resolve, reject) => {
-        UserStatus.findOne({ where: { user_id: userId }})
+        db.UserStatus.findOne({ where: { user_id: userId }})
             .then((obj) => {
                 resolve({
                     status: ((obj) && (obj.dataValues)) ? obj.dataValues.status : constants.userStatus.status.notReading.value,
@@ -295,7 +257,7 @@ function getCurrentReadingStart(userId) {
 
 function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCountCurrent = false) {
     return new Promise((resolve, reject) => {
-        ChannelRecord.findAll({ where: {
+        db.ChannelRecord.findAll({ where: {
                 user_id: userId,
                 [Op.or]: [
                     {
@@ -368,10 +330,9 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
     });
 }
 
-
 function displayTimeRangeRecords(userId, start, end, rangeName = '這時段') {
     return new Promise((resolve, reject) => {
-        ChannelRecord.findAll({ where: {
+        db.ChannelRecord.findAll({ where: {
                 user_id: userId,
                 [Op.or]: [
                     {
