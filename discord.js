@@ -6,7 +6,7 @@ const {sequelize, DataTypes, Op } = require('sequelize');
 const Discord = require('discord.js');
 const { Client, Intents } = require('discord.js');
 const moment = require('moment');
-const db = require('./datebase');
+const db = require('./database');
 
 const client = new Client({ intents: [
         Intents.FLAGS.GUILDS,
