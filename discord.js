@@ -289,6 +289,29 @@ client.on('voiceStateUpdate', (oldState, newState) => {
                     });
                 }
             });
+
+        db.UserStatus.findAll({
+            where: {
+                get_online_message: constants.userStatus.getOnlineMessage.getting.value,
+                [Op.and]: [
+                    {
+                        user_id: {
+                            [Op.not]: newState.member.user.id
+                        }
+                    }
+                ]
+            }
+        }).then((userStatuses) => {
+            if (userStatuses.length > 0) {
+                userStatuses.forEach(userStatus => {
+                    client.users.fetch(userStatus.dataValues.user_id).then(user => {
+                        user.send(newState.member.user.username + ' 開始讀書了！');
+                    }).catch(error => {
+                        textChannel.send('fail getting user_id: ' + userStatus.dataValues.user_id);
+                    });
+                });
+            }
+        })
     } else if (oldState.channelId === process.env.recordChannelId) {
         db.UserStatus.findOne({ where: { user_id: newState.member.user.id }})
             .then((obj) => {
