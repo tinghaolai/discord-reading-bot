@@ -125,7 +125,7 @@ client.on('messageCreate', msg => {
 
         case 'now':
         case '現在':
-            getCurrentReadingStart(msg.author.id).then(obj => {
+            getUserStatus(msg.author.id).then(obj => {
                 switch (obj.status) {
                     case constants.userStatus.status.notReading.value:
                         let message = '現在沒有在讀!';
@@ -147,7 +147,7 @@ client.on('messageCreate', msg => {
                         msg.reply('unknown status');
                 }
             }).catch(error => {
-                recordError(error, 'getCurrentReadingStart catch error');
+                recordError(error, 'getUserStatus catch error');
             });
 
             break;
@@ -260,7 +260,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
     }
 });
 
-function getCurrentReadingStart(userId) {
+function getUserStatus(userId) {
     return new Promise((resolve, reject) => {
         db.UserStatus.findOne({ where: { user_id: userId }})
             .then((obj) => {
@@ -317,7 +317,7 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
                     resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
                 }
             } else if (ifCountCurrent === true) {
-                getCurrentReadingStart(userId).then(currentReading => {
+                getUserStatus(userId).then(currentReading => {
                     if (
                         (currentReading.status === constants.userStatus.status.reading.value) &&
                         (currentReading.startTime !== null)
@@ -340,7 +340,7 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
                         resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
                     }
                 }).catch(error => {
-                    recordError(error, 'getCurrentReadingStart catch error');
+                    recordError(error, 'getUserStatus catch error');
                 });
             }
         });
