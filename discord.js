@@ -147,7 +147,7 @@ client.on('messageCreate', msg => {
                         msg.reply('unknown status');
                 }
             }).catch(error => {
-                recordError(error, 'getCurrentReadingStart catch error 123');
+                recordError(error, 'getCurrentReadingStart catch error');
             });
 
             break;
