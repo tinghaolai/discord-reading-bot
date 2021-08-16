@@ -264,9 +264,16 @@ function getUserStatus(userId) {
     return new Promise((resolve, reject) => {
         db.UserStatus.findOne({ where: { user_id: userId }})
             .then((obj) => {
-                resolve({
-                    status: ((obj) && (obj.dataValues)) ? obj.dataValues.status : constants.userStatus.status.notReading.value,
-                    startTime: ((obj) && (obj.dataValues)) ? obj.dataValues.start_time : null,
+                resolve(((obj) && (obj.dataValues)) ? {
+                    status: obj.dataValues.status,
+                    startTime: obj.dataValues.start_time,
+                    monthGoal: obj.dataValues.month_goal,
+                    weekGoal: obj.dataValues.week_goal
+                } : {
+                    status: constants.userStatus.status.notReading.value,
+                    startTime: null,
+                    monthGoal: null,
+                    weekGoal: null
                 });
             });
     });
