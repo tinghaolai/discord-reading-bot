@@ -188,7 +188,7 @@ client.on('messageCreate', msg => {
                         ' ( ' + Math.floor(responses[2].seconds / 3600) + '/' +
                         Math.floor(responses[0].weekGoal / 3600) + ' 小時)');
                 } else {
-                    messages.push('還沒有設定月目標！');
+                    messages.push('還沒有設定周目標！');
                 }
 
                 msg.reply(messages.join('\n'));
