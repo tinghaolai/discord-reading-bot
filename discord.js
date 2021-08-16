@@ -415,7 +415,7 @@ function recordError(error, errorType = null) {
     textChannel.send(error);
 }
 
-function secondsConvertHourInfo(second) {
+function secondsConvertHourInfo(second, displaySecondIfZero = true) {
     let hours = Math.floor(second / 3600);
     let messages = [];
     if (hours) {
@@ -429,7 +429,9 @@ function secondsConvertHourInfo(second) {
         messages.push(minutes + '分鐘');
     }
 
-    messages.push(second + '秒');
+    if ((displaySecondIfZero) && (second)) {
+        messages.push(second + '秒');
+    }
 
     return messages.join(',');
 }
@@ -440,6 +442,8 @@ function setGoalHour(userId, goalColumn, goalHour) {
             .then((userStatus) => {
                 if (goalHour === 0) {
                     resolve('無法設為 0 !');
+
+                    return;
                 }
 
                 if (userStatus) {
