@@ -16,7 +16,9 @@ module.exports = (sequelize, DataTypes) => {
   UserStatus.init({
     user_id: DataTypes.BIGINT,
     status: DataTypes.INTEGER,
-    start_time: DataTypes.BIGINT
+    start_time: DataTypes.BIGINT,
+    month_goal: DataTypes.BIGINT,
+    week_goal: DataTypes.BIGINT
   }, {
     sequelize,
     modelName: 'UserStatus',
