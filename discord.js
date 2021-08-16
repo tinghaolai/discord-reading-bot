@@ -189,6 +189,24 @@ client.on('messageCreate', msg => {
 
                 break;
             }
+
+            let weekGoalSetMatch = msg.content.match(/^[Ww]eek [Gg]oal ([1-9]{0,1}[0-9]*)$/);
+            if (weekGoalSetMatch) {
+                setGoalHour(msg.author.id, 'week_goal', parseInt(weekGoalSetMatch[1])).then(message => {
+                    msg.reply(message);
+                });
+
+                break;
+            }
+
+            let monthGoalSetMatch = msg.content.match(/^[Mm]onth [Gg]oal ([1-9]{0,1}[0-9]*)$/);
+            if (monthGoalSetMatch) {
+                setGoalHour(msg.author.id, 'month_goal', parseInt(monthGoalSetMatch[1])).then(message => {
+                    msg.reply(message);
+                });
+
+                break;
+            }
     }
 });
 
@@ -395,6 +413,35 @@ function secondsConvertHourInfo(second) {
     messages.push(second + '秒');
 
     return messages.join(',');
+}
+
+function setGoalHour(userId, goalColumn, goalHour) {
+    return new Promise((resolve, reject) => {
+        db.UserStatus.findOne({ where: { user_id: userId } })
+            .then((userStatus) => {
+                if (goalHour === 0) {
+                    resolve('無法設為 0 !');
+                }
+
+                if (userStatus) {
+                    let updateData = {};
+                    updateData[goalColumn] = goalHour * 3600;
+                    userStatus.update(updateData);
+                } else {
+                    let createData = {
+                        user_id: userId,
+                        status: constants.userStatus.status.notReading.value,
+                        start_time: moment().unix(),
+                    };
+
+                    createData[goalColumn] = goalHour * 3600;
+
+                    db.UserStatus.create(createData);
+                }
+
+                resolve('設置成功');
+            });
+    });
 }
 
 client.login(process.env.bot_token);
