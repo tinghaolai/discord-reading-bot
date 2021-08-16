@@ -47,8 +47,8 @@ client.on('messageCreate', msg => {
                 moment().endOf('day').unix(),
                 '今天',
                 true
-            ).then(message => {
-                msg.reply(message);
+            ).then(result => {
+                msg.reply(result.message);
             }).catch(error => {
                 recordError(error, 'checkTimeRangeRecord catch error');
             });
@@ -62,8 +62,8 @@ client.on('messageCreate', msg => {
                 moment().subtract(1, 'days').startOf('day').unix(),
                 moment().subtract(1, 'days').endOf('day').unix(),
                 '昨天'
-            ).then(message => {
-                msg.reply(message);
+            ).then(result => {
+                msg.reply(result.message);
             }).catch(error => {
                 recordError(error, 'checkTimeRangeRecord catch error');
             });
@@ -81,8 +81,8 @@ client.on('messageCreate', msg => {
                 moment().startOf('week').unix(),
                 moment().endOf('week').unix(),
                 '這禮拜'
-            ).then(message => {
-                msg.reply(message);
+            ).then(result => {
+                msg.reply(result.message);
             }).catch(error => {
                 recordError(error, 'checkTimeRangeRecord catch error');
             });
@@ -98,8 +98,8 @@ client.on('messageCreate', msg => {
                 moment().startOf('month').unix(),
                 moment().endOf('month').unix(),
                 '這個月'
-            ).then(message => {
-                msg.reply(message);
+            ).then(result => {
+                msg.reply(result.message);
             }).catch(error => {
                 recordError(error, 'checkTimeRangeRecord catch error');
             });
@@ -161,8 +161,8 @@ client.on('messageCreate', msg => {
                     moment().unix(),
                     searchHourMatch[1] + '小時內',
                     true
-                ).then(message => {
-                    msg.reply(message);
+                ).then(result => {
+                    msg.reply(result.message);
                 }).catch(error => {
                     recordError(error, 'checkTimeRangeRecord catch error');
                 });
@@ -181,8 +181,8 @@ client.on('messageCreate', msg => {
                     specifyDate.startOf('day').unix(),
                     specifyDate.endOf('day').unix(),
                     month + '月' + day + '號'
-                ).then(message => {
-                    msg.reply(message);
+                ).then(result => {
+                    msg.reply(result.message);
                 }).catch(error => {
                     recordError(error, 'checkTimeRangeRecord catch error');
                 });
@@ -319,9 +319,15 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
 
             if (ifCountCurrent === false) {
                 if (totalSecond === 0) {
-                    resolve(rangeName + '沒有讀書紀錄哦');
+                    resolve({
+                        message: rangeName + '沒有讀書紀錄哦',
+                        seconds: totalSecond,
+                    });
                 } else {
-                    resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
+                    resolve({
+                        message: rangeName + '讀了' + secondsConvertHourInfo(totalSecond),
+                        seconds: totalSecond,
+                    });
                 }
             } else if (ifCountCurrent === true) {
                 getUserStatus(userId).then(currentReading => {
@@ -342,9 +348,15 @@ function checkTimeRangeRecord(userId, start, end, rangeName = '這時段', ifCou
                     }
 
                     if (totalSecond === 0) {
-                        resolve(rangeName + '沒有讀書紀錄哦');
+                        resolve({
+                            message: rangeName + '沒有讀書紀錄哦',
+                            seconds: totalSecond,
+                        });
                     } else {
-                        resolve(rangeName + '讀了' + secondsConvertHourInfo(totalSecond));
+                        resolve({
+                            message: rangeName + '讀了' + secondsConvertHourInfo(totalSecond),
+                            seconds: totalSecond,
+                        });
                     }
                 }).catch(error => {
                     recordError(error, 'getUserStatus catch error');
