@@ -152,6 +152,50 @@ client.on('messageCreate', msg => {
 
             break;
 
+        case 'goal':
+        case 'goals':
+        case '目標':
+            Promise.all([
+                getUserStatus(msg.author.id),
+                checkTimeRangeRecord(
+                    msg.author.id,
+                    moment().startOf('month').unix(),
+                    moment().endOf('month').unix(),
+                    '本月'
+                ),
+                checkTimeRangeRecord(
+                    msg.author.id,
+                    moment().startOf('week').unix(),
+                    moment().endOf('week').unix(),
+                    '本周'
+                )
+            ]).then(responses => {
+                let messages = [responses[1].message, responses[2].message, '\n'];
+                if (responses[0].monthGoal) {
+                    messages.push('本月目標：' + secondsConvertHourInfo(responses[0].monthGoal, false));
+                    messages.push('達成率：' + (responses[1].seconds / responses[0].monthGoal * 100).toFixed(2) + '%' +
+                        ' ( ' + Math.floor(responses[1].seconds / 3600) + '/' +
+                        Math.floor(responses[0].monthGoal / 3600) + ' 小時)');
+                } else {
+                    messages.push('還沒有設定月目標！');
+                }
+
+                messages.push('\n');
+
+                if (responses[0].weekGoal) {
+                    messages.push('本周目標：' + secondsConvertHourInfo(responses[0].weekGoal, false));
+                    messages.push('達成率：' + (responses[2].seconds / responses[0].weekGoal * 100).toFixed(2) + '%' +
+                        ' ( ' + Math.floor(responses[2].seconds / 3600) + '/' +
+                        Math.floor(responses[0].weekGoal / 3600) + ' 小時)');
+                } else {
+                    messages.push('還沒有設定月目標！');
+                }
+
+                msg.reply(messages.join('\n'));
+            });
+
+            break;
+
         default:
             let searchHourMatch = msg.content.match(/^[Ii]n ([1-9]{0,1}[0-9]) hours/);
             if (searchHourMatch) {
