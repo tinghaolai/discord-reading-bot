@@ -8,6 +8,14 @@
       "reading": {
         "value": 1
       }
+    },
+    "getOnlineMessage": {
+      "notGetting": {
+        "value": 0
+      },
+      "getting": {
+        "value": 1
+      }
     }
   }
 }

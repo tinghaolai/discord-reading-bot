@@ -196,6 +196,22 @@ client.on('messageCreate', msg => {
 
             break;
 
+        case '接收上線訊息':
+        case 'get online message open':
+            setIfGetOnlineMessage(msg.author.id, constants.userStatus.getOnlineMessage.getting.value).then(message => {
+                msg.reply(message);
+            });
+
+            break;
+
+        case '不接收上線訊息':
+        case 'get online message off':
+            setIfGetOnlineMessage(msg.author.id, constants.userStatus.getOnlineMessage.notGetting.value).then(message => {
+                msg.reply(message);
+            });
+
+            break;
+
         default:
             let searchHourMatch = msg.content.match(/^[Ii]n ([1-9]{0,1}[0-9]) hours/);
             if (searchHourMatch) {
@@ -312,12 +328,14 @@ function getUserStatus(userId) {
                     status: obj.dataValues.status,
                     startTime: obj.dataValues.start_time,
                     monthGoal: obj.dataValues.month_goal,
-                    weekGoal: obj.dataValues.week_goal
+                    weekGoal: obj.dataValues.week_goal,
+                    getOnlineMessage: obj.dataValues.get_online_message,
                 } : {
                     status: constants.userStatus.status.notReading.value,
                     startTime: null,
                     monthGoal: null,
-                    weekGoal: null
+                    weekGoal: null,
+                    getOnlineMessage: null,
                 });
             });
     });
@@ -507,6 +525,27 @@ function setGoalHour(userId, goalColumn, goalHour) {
                 }
 
                 resolve('設置成功');
+            });
+    });
+}
+
+function setIfGetOnlineMessage(userId, getSetting) {
+    return new Promise((resolve, reject) => {
+        db.UserStatus.findOne({ where: { user_id: userId }})
+            .then((userStatus) => {
+                if (userStatus) {
+                    userStatus.update({
+                        get_online_message: getSetting,
+                    });
+                } else {
+                    db.UserStatus.create({
+                        user_id: userId,
+                        status: constants.userStatus.status.notReading.value,
+                        get_online_message: getSetting,
+                    });
+                }
+
+                resolve('設定成功');
             });
     });
 }

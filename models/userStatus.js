@@ -18,7 +18,8 @@ module.exports = (sequelize, DataTypes) => {
     status: DataTypes.INTEGER,
     start_time: DataTypes.BIGINT,
     month_goal: DataTypes.BIGINT,
-    week_goal: DataTypes.BIGINT
+    week_goal: DataTypes.BIGINT,
+    get_online_message: DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'UserStatus',
